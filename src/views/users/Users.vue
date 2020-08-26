@@ -1,5 +1,6 @@
 <template>
   <div>
+<!--    面包屑导航-->
     <el-breadcrumb separator-class="el-icon-arrow-right">
       <el-breadcrumb-item :to="{ path: '/home' }">首页</el-breadcrumb-item>
       <el-breadcrumb-item>用户管理</el-breadcrumb-item>
@@ -79,10 +80,41 @@
               </span>
             </el-dialog>
 
-            <el-button type="danger" icon="el-icon-delete" size="mini" @click="removeUserById(slot.row.id)"></el-button>
+            <el-button style="margin-left: 10px" type="danger" icon="el-icon-delete" size="mini" @click="removeUserById(slot.row.id)"></el-button>
             <el-tooltip effect="dark" content="分配角色" placement="top" :enterable="false">
-              <el-button type="warning" icon="el-icon-setting" size="mini"></el-button>
+              <el-button @click="userRole(slot.row)" type="warning" icon="el-icon-setting" size="mini"></el-button>
             </el-tooltip>
+
+            <el-dialog
+              title="分配角色"
+              :visible.sync="roleDialogVisible"
+              width="50%"
+              @close="setRoleDialog">
+              <div>
+                <span>当前用户：{{userRowInfo.username}}</span>
+              </div>
+              <div>
+                <span>当前角色：{{userRowInfo.role_name}}</span>
+              </div>
+              <div>
+                <span>
+                  分配角色：
+                  <el-select v-model="selectRoleId" placeholder="请选择">
+                    <el-option
+                      v-for="item in rolesList"
+                      :key="item.id"
+                      :label="item.roleName"
+                      :value="item.id">
+                    </el-option>
+                  </el-select>
+                </span>
+              </div>
+              <span slot="footer" class="dialog-footer">
+              <el-button @click="roleDialogVisible = false">取 消</el-button>
+              <el-button type="primary" @click="saveRoleInfo">确 定</el-button>
+            </span>
+            </el-dialog>
+
           </template>
         </el-table-column>
       </el-table>
@@ -130,9 +162,13 @@
         },
         userList: [],
         total: 0,
+        userRowInfo: {},
+        rolesList: [],
+        selectRoleId: '',
 
         dialogVisible: false,
         editDialog: false,
+        roleDialogVisible: false,
 
         addForm: {
           username: '',
@@ -159,7 +195,8 @@
           mobile: [
             { required: true, message: '请输入手机号', trigger: 'blur' },
             { validator: checkMobile, trigger: 'blur'}
-          ]
+          ],
+
         }
       }
     },
@@ -276,19 +313,41 @@
             message: '已取消删除'
           });
         });
-      }
+      },
+      userRole(userInfo) {
+        request({
+          url: 'roles',
+          method: 'get'
+        }).then(res => {
+          if (res.data.meta.status !== 200) return this.$message.error('获取角色列表失败')
+          this.rolesList = res.data.data
+        })
+
+        this.roleDialogVisible = true
+        this.userRowInfo = userInfo
+      },
+      saveRoleInfo() {
+        request({
+          url: `users/${this.userRowInfo.id}/role`,
+          method: 'put',
+          data: {
+            rid: this.selectRoleId
+          }
+        }).then(res => {
+          if (res.data.meta.status !== 200) return this.$message.error('分配角色失败')
+          this.$message.success('分配角色成功')
+          this.getUserList()
+          this.roleDialogVisible = false
+        })
+      },
+      setRoleDialog() {
+        this.selectRoleId = ''
+        this.userRowInfo = {}
+      },
     }
   }
 </script>
 
 <style scoped>
-  .el-card{
-    margin-top: 10px;
-  }
-  .el-table{
-    margin-top: 10px;
-  }
-  .el-pagination{
-    margin-top: 10px;
-  }
+
 </style>

@@ -53,7 +53,7 @@
         const {data: res} = await request({method: 'get', url: 'menus',})
         if (res.meta.status !== 200) return this.$message.error(res.meta.msg)
         this.menuList = res.data
-        console.log(res);
+        // console.log(res);
       }
     },
     created() {
